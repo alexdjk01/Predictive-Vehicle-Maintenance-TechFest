@@ -4,8 +4,8 @@ import json
 import joblib
 import pandas as pd
 
-from models.knapsack import select_under_budget
-from models.pricing import build_candidate_item, render_output, compute_mandatory_steps
+from .knapsack import select_under_budget
+from .pricing import build_candidate_item, render_output, compute_mandatory_steps
 
 
 def _load_artifacts(artifacts_dir: str, components: list[str]):
@@ -20,11 +20,11 @@ def _load_artifacts(artifacts_dir: str, components: list[str]):
     }
 
 
-def create_inference(job: dict, artifacts_dir: str) -> dict:
+def inference(job: dict, artifacts_dir: str) -> dict:
     # 1) Build input frame; inject neutral access if app doesn't provide it
     df = pd.DataFrame([job])
-    if "ease_of_acces" not in df.columns:
-        df["ease_of_acces"] = 1  # neutral default
+    if "ease_of_acces(0-2)" not in df.columns:
+        df["ease_of_acces(0-2)"] = 1  # neutral default
 
     # 2) Discover components and load artifacts
     components = sorted(p.stem.replace("_time","") for p in Path(artifacts_dir).glob("*_time.pkl"))
@@ -34,7 +34,7 @@ def create_inference(job: dict, artifacts_dir: str) -> dict:
     bundles = _load_artifacts(artifacts_dir, components)
 
     time_budget = int(job.get("time_budget_min", 90))
-    labor_rate = float(0.5)
+    labor_rate  = float(0.5)
 
     # 3) Predict per-component, build items
     items, skipped = [], {}
@@ -59,3 +59,22 @@ def create_inference(job: dict, artifacts_dir: str) -> dict:
 
     # 6) Shape final output
     return render_output(mandatory, chosen, skipped)
+
+# Debug Code
+
+
+# job = {
+#     "year": 2019,
+#     "odometer": 80000,
+#     "grade_of_rust(0-5)": 0,
+#     "accident_zone": "none",
+#     "severity_of_accident(0-5)": 0,
+#     "is_flooded": 0,
+#     "vehicle_type": "combustion",
+#     "time_budget_min": 90,
+#     "grade_of_rust": 0,
+#     "ease_of_acces": 0,
+#     "severity_of_accident" :0
+# }
+#
+# print(json.dumps(inference(job, artifacts_dir="artifacts"), indent=2))

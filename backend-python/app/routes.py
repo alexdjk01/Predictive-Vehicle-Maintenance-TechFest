@@ -2,7 +2,7 @@
 import json
 from flask import Blueprint, request, jsonify
 
-from models.inference import create_inference
+from models.inference import inference
 
 # Create a blueprint for the routes
 app_routes = Blueprint('app_routes', __name__)
@@ -19,7 +19,7 @@ def post_data():
     year = data.get('year')
     time_budget_min = data.get('timebudget')
 
-    obj = create_inference(data, artifacts_dir="backend-python/models/artifacts")
+    obj = inference(data, artifacts_dir="backend-python/models/artifacts")
     obj["vehicle"] = {
         "brand": brand,
         "year": year,
