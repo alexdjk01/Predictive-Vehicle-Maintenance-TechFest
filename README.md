@@ -43,8 +43,6 @@ frontend-dashboard/
 python -m venv .venv
 # Windows PowerShell
 . .venv/Scripts/Activate.ps1
-# macOS/Linux
-# source .venv/bin/activate
 python -m pip install --upgrade pip
 
 # install backend (editable)
@@ -82,8 +80,6 @@ Frontend on **[http://localhost:3000](http://localhost:3000)**.
 ```bash
 # from repo root
 . .venv/Scripts/Activate.ps1      # Windows PowerShell
-# source .venv/bin/activate        # macOS/Linux
-cd backend
 python -m pvmt.main
 ```
 
@@ -92,21 +88,5 @@ python -m pvmt.main
 ```bash
 cd frontend-dashboard
 npm start   # or: npm run dev
-```
-
----
-
-## API smoke test (optional)
-
-```bash
-curl -X POST http://127.0.0.1:5000/home/post-data \
-  -H "Content-Type: application/json" \
-  -d '{
-        "brand": "BMW",
-        "odometer": 100000,
-        "vehicletype": "combustion",
-        "year": 2017,
-        "timebudget": 60
-      }'
 ```
 
