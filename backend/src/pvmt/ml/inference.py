@@ -1,11 +1,17 @@
 from __future__ import annotations
 from pathlib import Path
-import json
-import joblib
 import pandas as pd
+import joblib
+import json
 
-from .knapsack import select_under_budget
-from .pricing import build_candidate_item, render_output, compute_mandatory_steps
+from pvmt.ml.utils.knapsack import select_under_budget
+from pvmt.ml.utils.pricing import build_candidate_item, render_output, compute_mandatory_steps
+
+import sys
+import pvmt.ml.features as _features   # if your file is src/pvmt/ml/features.py
+sys.modules["features"] = _features
+
+ARTIFACTS_DIR = Path(__file__).parent / "artifacts"
 
 
 def _load_artifacts(artifacts_dir: str, components: list[str]):
@@ -19,24 +25,29 @@ def _load_artifacts(artifacts_dir: str, components: list[str]):
         for comp in components
     }
 
-
-def inference(job: dict, artifacts_dir: str) -> dict:
+def inference(job: dict, artifacts_dir: str | Path = ARTIFACTS_DIR) -> dict:
+    """
+    Run per-component time/success predictions, select under time budget,
+    add mandatory steps, and shape the final response.
+    """
     # 1) Build input frame; inject neutral access if app doesn't provide it
     df = pd.DataFrame([job])
-    if "ease_of_acces(0-2)" not in df.columns:
-        df["ease_of_acces(0-2)"] = 1  # neutral default
+    # inject neutral access if app doesn't provide it (name expected by preprocessor)
+    if "ease_of_acces" not in df.columns:
+        df["ease_of_acces"] = job.get("ease_of_acces", 1)
 
     # 2) Discover components and load artifacts
-    components = sorted(p.stem.replace("_time","") for p in Path(artifacts_dir).glob("*_time.pkl"))
+    base = Path(artifacts_dir).resolve()
+    components = sorted(p.stem.replace("_time", "") for p in base.glob("*_time.pkl"))
     if not components:
         return render_output(mandatory_first=[], chosen=[], skipped={"_system": "no artifacts found"})
 
-    bundles = _load_artifacts(artifacts_dir, components)
+    bundles = _load_artifacts(str(base), components)
 
     time_budget = int(job.get("time_budget_min", 90))
     labor_rate  = float(0.5)
 
-    # 3) Predict per-component, build items
+    # 3) Predict per-component, build candidate items
     items, skipped = [], {}
     for comp in components:
         b = bundles[comp]

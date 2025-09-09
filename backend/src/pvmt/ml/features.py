@@ -43,7 +43,7 @@ def _add_derived(df: pd.DataFrame) -> pd.DataFrame:
       - vehicle_age: older cars are usually harder (corroded fasteners, etc.)
       - log_odometer: mileage is skewed; log compresses the long tail
       - damage flags: explicit binary indicators from accident_zone
-    We keep original columns too; tree models can use both.
+    We keep original columns too; tree ml can use both.
     """
     out = df.copy()
 
