@@ -11,8 +11,8 @@ src/pvmt/app/__init__.py
 src/pvmt/app/routes.py
 src/pvmt/app/utils.py
 src/pvmt/ml/__init__.py
+src/pvmt/ml/features.py
 src/pvmt/ml/inference.py
 src/pvmt/ml/utils/__init__.py
-src/pvmt/ml/utils/features.py
 src/pvmt/ml/utils/knapsack.py
 src/pvmt/ml/utils/pricing.py
