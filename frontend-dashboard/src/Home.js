@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 
-// Brand data (replace logos with your paths)
 const brands = [
   { name: 'BMW', logo: '/logos/bmw.png' },
   { name: 'Audi', logo: '/logos/audi.png' },
@@ -14,7 +13,7 @@ const brands = [
   { name: 'Lexus', logo: '/logos/lexus.png' },
 ];
 
-const VEHICLE_TYPES = ['petrol', 'diesel', 'hybrid', 'electric'];
+const VEHICLE_TYPES = ['combustion', 'ev', 'hybrid'];
 const CURRENT_YEAR = new Date().getFullYear();
 
 function Home({ setBackendResponse }) {
@@ -24,7 +23,14 @@ function Home({ setBackendResponse }) {
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [accidentZone, setAccidentZone] = useState(''); // NEW
+  const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
+
+  function hasErrors() {
+  // native required will handle most inputs; brand is custom
+  const brandMissing = !selectedBrand;
+  return brandMissing;
+  }
 
   const handleBrandSelect = (brand) => {
     setSelectedBrand(brand);
@@ -34,11 +40,24 @@ function Home({ setBackendResponse }) {
   const handleZoneChange = (e) => {
     const val = e.target.value;
     setAccidentZone(val);
-    if (val === 'none') setSeverity(0); // reset when no accident
+    if (val === 'none') setSeverity(0);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitted(true);
+
+    const form = e.currentTarget;
+    const formInvalid = !e.currentTarget.checkValidity() || hasErrors();
+    if (formInvalid) {
+      form.reportValidity();
+      const firstInvalid = form.querySelector(':invalid');
+      if (firstInvalid) {
+        firstInvalid.focus({ preventScroll: true });
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
 
     if (!selectedBrand) {
       alert('Please select a brand.');
@@ -69,9 +88,8 @@ function Home({ setBackendResponse }) {
 
       if (response.ok) {
         const result = await response.json();
-        // console.log(result);
-        setBackendResponse(result); // Save response
-        navigate('/dashboard');     // Redirect to dashboard
+        setBackendResponse(result); 
+        navigate('/dashboard');    
       } else {
         const text = await response.text();
         console.error('Backend error:', response.status, text);
@@ -87,7 +105,7 @@ function Home({ setBackendResponse }) {
     <div className="home-root">
       <h1>Predictive Vehicle Component Dismantling</h1>
 
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate className={submitted ? 'show-errors' : ''}>
         {/* Brand */}
         <div className="form-row-brand">
           <label className="brand-label">Brand</label>
@@ -95,9 +113,10 @@ function Home({ setBackendResponse }) {
           <div className="brand-dropdown-container">
             <button
               type="button"
-              className="brand-dropdown-toggle"
+              className={`brand-dropdown-toggle ${submitted && !selectedBrand ? 'error' : ''}`}
               aria-haspopup="listbox"
               aria-expanded={showBrandDropdown}
+              aria-invalid={submitted && !selectedBrand ? 'true' : 'false'}
               onClick={() => setShowBrandDropdown((v) => !v)}
             >
               {selectedBrand ? (
@@ -197,10 +216,9 @@ function Home({ setBackendResponse }) {
               </select>
             </div>
 
-            <div className={`inline-field ${severityDisabled ? 'is-disabled' : ''}`}>
-              <label htmlFor="severity">
-                Accident Severity <span className="slider-value">{severity}</span>
-              </label>
+            <div className={`inline-field form-group ${severityDisabled ? 'is-disabled' : ''}`}>
+            <label htmlFor="severity">Accident Severity</label>
+            <div className="range-inline">
               <input
                 type="range"
                 id="severity"
@@ -212,7 +230,10 @@ function Home({ setBackendResponse }) {
                 disabled={severityDisabled}
                 aria-disabled={severityDisabled}
               />
+              <span className="range-value">{severity}</span>
             </div>
+          </div>
+
           </div>
 
           <div className="form-group">

@@ -182,8 +182,19 @@ input[type="range"]{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem 1.25rem;
-  align-items: end;
+  align-items: start;              /* was end – top-align both columns */
 }
+
+/* Make inline-field behave like a normal form group */
+.inline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Avoid double spacing when using gap */
+.inline-field label { margin-bottom: 0; }
+
 
 /* Disabled look for severity when zone is 'none' or empty */
 .inline-field.is-disabled {
@@ -193,6 +204,46 @@ input[type="range"]{
   cursor: not-allowed;
   filter: grayscale(0.6);
 }
+
+/* Align slider + live value on one line */
+.home-root .range-inline {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+/* Let the slider stretch while value stays tight */
+.home-root .range-inline input[type="range"] {
+  flex: 1;
+}
+
+/* Numeric badge next to the slider */
+.home-root .range-value {
+  min-width: 2ch;               /* keeps width stable for 0–5 */
+  text-align: right;
+  font-weight: 700;
+  color: var(--color-btn-gradient-start);
+}
+
+/* When disabled via .is-disabled parent, keep the dimmed look */
+.inline-field.is-disabled .range-value {
+  color: #bfc0c0;
+}
+
+/* Red error border AFTER submit for all native invalid fields */
+.home-root form.show-errors input:invalid,
+.home-root form.show-errors select:invalid,
+.home-root form.show-errors textarea:invalid {
+  border-color: #ff6b6b !important;
+  box-shadow: 0 0 0 2px rgba(255,107,107,0.18);
+}
+
+/* Custom Brand control (since it's not a native <select>) */
+.home-root form.show-errors .brand-dropdown-toggle.error {
+  border-color: #ff6b6b !important;
+  box-shadow: 0 0 0 2px rgba(255,107,107,0.18);
+}
+
 
 /* --- Responsive --------------------------------------------------------- */
 @media (max-width:900px){
