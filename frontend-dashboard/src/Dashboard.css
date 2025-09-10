@@ -16,11 +16,14 @@
 }
 
 /* Base */
-body, .dashboard-container {
-  font-family: var(--font-main);
-  background: linear-gradient(120deg, var(--color-bg-gradient-start) 0%, var(--color-bg-gradient-end) 100%);
-  min-height: 100vh;
-  color: var(--color-input-text);
+body { font-family: var(--font-main); color: var(--color-input-text); } /* gradient now global */
+.dashboard-container {
+  width: min(96vw, 1320px);
+  margin: 2rem auto;
+  padding: clamp(1.5rem, 2vw, 2rem);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.05);   /* keep the glass card, not the gradient */
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
 }
 
 .dashboard-container {
@@ -227,9 +230,9 @@ body, .dashboard-container {
 .sel-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
 .sel-name { font-weight:700; color:var(--color-label); text-transform:capitalize; }
 .stat-grid {
-  display:grid;
-  grid-template-columns: repeat(3, minmax(160px, 1fr)); /* wider mini-cards */
-  gap:.6rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: .6rem;
 }
 .stat-card {
   padding: .6rem .7rem; border-radius: 10px;
@@ -242,10 +245,26 @@ body, .dashboard-container {
 /* Utility: subtle framed sections */
 .framed { border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0.8rem 1rem; background: rgba(255,255,255,0.03); }
 
+/* Numbered list without indent */
+.mandatory-steps {
+  list-style: decimal;
+  list-style-position: inside; /* numbers align with text, no left indent */
+  padding: 0;
+}
+.mandatory-steps li {
+  padding: .15rem 0;
+}
+
+/* Emoji after the title */
+.mandatory-title .mandatory-icon {
+  margin-left: .5rem;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .dashboard-container { width: min(98vw, 1200px); }
-  .stat-grid { grid-template-columns: 1fr 1fr 1fr; }
   .vehicle-strip { grid-template-columns: 1fr; }
   .vehicle-kpis {
     display: grid;                       
@@ -260,7 +279,7 @@ body, .dashboard-container {
   .vehicle-strip { grid-template-columns: 1fr; }
   .vehicle-kpis {
     grid-template-columns: 1fr;
-
   }
   .kpi { min-width: unset; width: 100%; }
+  .stat-grid { grid-template-columns: 1fr; }
 }
