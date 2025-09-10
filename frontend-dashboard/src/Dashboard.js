@@ -1,115 +1,173 @@
 import './Dashboard.css';
 
-
 function Dashboard({ response }) {
   if (!response) {
     return <div>No data received yet.</div>;
   }
 
-  console.log('Rendering dashboard with response:', response);
+  // Safe lookups & fallbacks
+  const vehicle = response.vehicle ?? {};
+  const brand = vehicle.brand ?? null;
+  const brandLogo = brand ? `/logos/${String(brand).toLowerCase()}.png` : null;
 
-  const usedPct = Math.min(100, Math.round((response.totals.time_min / (response.ui.time_budget_min || response.totals.time_min)) * 100));
-  const partsCount = response.selected_order.length;
+  const timeMin   = response.totals?.time_min ?? 0;
+  const budgetMin = response.ui?.time_budget_min ?? timeMin;           // fallback = 100%
+  const usedPct   = budgetMin > 0 ? Math.min(100, Math.round((timeMin / budgetMin) * 100)) : 0;
+  const totalCo2 = response.totals?.co2_saved_kg ?? (response.selected_order || []).reduce((s, i) => s + (i.co2_saved_kg ?? 0), 0);
+
+  // helper: clean step labels (remove underscores, trim)
+  const cleanStep = (s) => {
+  const str = String(s ?? '').replace(/_/g, ' ').trim();
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+  const mandatorySteps = Array.isArray(response.mandatory_first) ? response.mandatory_first : [];
+
 
   return (
     <div className="dashboard-container">
 
-      {/* Vehicle strip with inline logo + name */}
+      {/* Vehicle strip (robust if backend omits vehicle) */}
       <section className="vehicle-strip">
         <div className="vehicle-main">
-          <img src={`/logos/${response.vehicle.brand}.png`} alt="Brand" className="brand-inline" />
+          {brandLogo && <img src={brandLogo} alt={`${brand} logo`} className="brand-inline" />}
           <div className="vehicle-heading">
             <div className="vehicle-line">
-              <span className="veh-title">{response.vehicle.brand}</span>
-              <span className="veh-meta">• {response.vehicle.year}</span>
+              <span className="veh-title">{brand ?? 'Plan Summary'}</span>
+              {vehicle.year && <span className="veh-meta">• {vehicle.year}</span>}
             </div>
             <div className="veh-badges">
-              <span className={`chip chip-${response.vehicle.vehicletype}`}>{response.vehicle.vehicletype}</span>
-              <span className="chip chip-neutral">
-                {new Intl.NumberFormat().format(response.vehicle.odometer_km)} km
-              </span>
+              {vehicle.vehicletype && <span className={`chip chip-${vehicle.vehicletype}`}>{vehicle.vehicletype}</span>}
+              {typeof vehicle.odometer_km === 'number' && (
+                <span className="chip chip-neutral">
+                  {new Intl.NumberFormat().format(vehicle.odometer_km)} km
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* KPI row — equal heights */}
+        {/* KPI row */}
         <div className="vehicle-kpis">
           <div className="kpi kpi-box">
             <div className="kpi-label">Time used</div>
-            <div className="kpi-gauge" aria-label={`Time used ${usedPct}%`} style={{ '--kpi': `${usedPct}%` }}>
-              <div className="kpi-gauge-fill"  />
+            <div
+              className="kpi-gauge"
+              aria-label={`Time used ${usedPct}%`}
+              style={{ '--kpi': `${usedPct}%` }}
+            >
               <div className="kpi-gauge-text">{usedPct}%</div>
             </div>
           </div>
+
           <div className="kpi kpi-box">
             <div className="kpi-label">Expected Profit</div>
-            <div className="kpi-big">€{response.totals.expected_profit_eur.toFixed(2)}</div>
+            <div className="kpi-big">
+              €{Number(response.totals?.expected_profit_eur ?? 0).toFixed(2)}
+            </div>
           </div>
+
           <div className="kpi kpi-box">
-            <div className="kpi-label">Selected Parts</div>
-            <div className="kpi-big">{partsCount}</div>
+            <div className="kpi-label">CO₂ Saved</div>
+            <div className="kpi-big">{totalCo2.toFixed(2)} kg</div>
           </div>
+
           <div className="kpi kpi-box">
             <div className="kpi-label">Total Time</div>
-            <div className="kpi-big">{response.totals.time_min.toFixed(2)} min</div>
+            <div className="kpi-big">{Number(timeMin).toFixed(2)} min</div>
           </div>
         </div>
       </section>
 
-      {/* Emphasized mandatory step */}
-      <section className="dashboard-section">
-        <div className="mandatory-banner" role="alert">
-          <span className="mandatory-icon">⚠️</span>
-          <div>
-            <div className="mandatory-title">Mandatory First Step</div>
-            <div className="mandatory-text">{response.mandatory_first.join(', ')}</div>
+      {/* Mandatory step */}
+      {mandatorySteps.length > 0 && (
+        <section className="dashboard-section">
+          <div className="mandatory-banner" role="alert" aria-label="Mandatory initial steps">
+            <div>
+              <div className="mandatory-title">
+                Mandatory Initial Steps <span className="mandatory-icon" aria-hidden>⚠️</span>
+              </div>
+              <ol className="mandatory-steps">
+                {mandatorySteps.map((s, i) => (
+                  <li key={`${i}-${s}`}>{cleanStep(s)}</li>
+                ))}
+              </ol>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Selected components: list, each with three mini-cards */}
+      {/* Selected components */}
       <section className="dashboard-section">
         <h2 className="dashboard-subtitle">Selected Components</h2>
         <ul className="sel-list">
-          {response.selected_order.map((item) => (
-            <li className="sel-item" key={item.component}>
+          {(response.selected_order ?? []).map((item) => (
+            <li className="sel-item" key={`${item.component}-${item.pred_time_min}`}>
               <div className="sel-head">
-                <span className="sel-name">{item.component.replace('_', ' ')}</span>
-                <span className={`status-chip ${item.decision === 'reuse' ? 'ok' : item.decision === 'recycle' ? 'warn' : 'muted'}`}>
+                <span className="sel-name">{String(item.component).replace(/_/g, ' ')}</span>
+                <span
+                  className={`status-chip ${
+                    item.decision === 'reuse'
+                      ? 'ok'
+                      : item.decision === 'recycle'
+                      ? 'warn'
+                      : 'muted'
+                  }`}
+                >
                   {item.decision || '—'}
                 </span>
               </div>
+
               <div className="stat-grid">
                 <div className="stat-card">
                   <div className="stat-label">Time</div>
-                  <div className="stat-value">{item.pred_time_min.toFixed(2)} min</div>
+                  <div className="stat-value">{Number(item.pred_time_min ?? 0).toFixed(2)} min</div>
                 </div>
+
                 <div className="stat-card">
                   <div className="stat-label">Success</div>
-                  <div className="stat-value">{(item.success_prob * 100).toFixed(0)}%</div>
+                  <div className="stat-value">{Math.round((item.success_prob ?? 0) * 100)}%</div>
                 </div>
+
                 <div className="stat-card">
                   <div className="stat-label">Profit</div>
-                  <div className="stat-value">€{response.totals.expected_profit_eur.toFixed(2)}</div>
+                  <div className="stat-value">
+                    €{(() => {
+                        const best = Math.max(
+                          item.reuse_profit_eur ?? Number.NEGATIVE_INFINITY,
+                          item.recycle_profit_eur ?? Number.NEGATIVE_INFINITY,
+                          item.expected_profit_eur ?? Number.NEGATIVE_INFINITY
+                        );
+                        return Number.isFinite(best) ? best.toFixed(2) : '0.00';
+                      })()}
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-label">CO₂ Saved</div>
+                  <div className="stat-value">{Number(item.co2_saved_kg ?? 0).toFixed(2)} kg</div>
                 </div>
               </div>
+
             </li>
           ))}
         </ul>
       </section>
 
-      {/* Skipped as a simple list */}
-      <section className="dashboard-section">
-        <h2 className="dashboard-subtitle">Skipped Components</h2>
-        <ul className="skipped-ul">
-          {Object.entries(response.skipped).map(([comp, reason]) => (
-            <li key={comp}>
-              <span className="skipped-name">{comp.replace('_', ' ')}</span>
-              <span className="skipped-reason"> — {reason}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* Skipped list */}
+      {response.skipped && (
+        <section className="dashboard-section">
+          <h2 className="dashboard-subtitle">Skipped Components</h2>
+          <ul className="skipped-ul">
+            {Object.entries(response.skipped).map(([comp, reason]) => (
+              <li key={comp}>
+                <span className="skipped-name">{String(comp).replace(/_/g, ' ')}</span>
+                <span className="skipped-reason"> — {reason}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

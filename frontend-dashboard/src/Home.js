@@ -22,12 +22,11 @@ function Home({ setBackendResponse }) {
   const [flooded, setFlooded] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
-  const [accidentZone, setAccidentZone] = useState(''); // NEW
+  const [accidentZone, setAccidentZone] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
 
   function hasErrors() {
-  // native required will handle most inputs; brand is custom
   const brandMissing = !selectedBrand;
   return brandMissing;
   }
@@ -160,17 +159,17 @@ function Home({ setBackendResponse }) {
 
         {/* Grid fields */}
         <div className="form-grid">
+          {/* Row 1 */}
           <div className="form-group">
             <label htmlFor="year">Manufacture Year</label>
             <input
               type="number"
               id="year"
               name="year"
-              placeholder="Enter the production year"
+              placeholder="Production year"
               required
               min="1980"
               max={CURRENT_YEAR}
-              defaultValue={CURRENT_YEAR - 7}
             />
           </div>
 
@@ -180,7 +179,7 @@ function Home({ setBackendResponse }) {
               type="number"
               id="odometer"
               name="odometer"
-              placeholder="Enter odometer reading"
+              placeholder="Odometer reading"
               required
               min="5"
               step="1"
@@ -197,26 +196,41 @@ function Home({ setBackendResponse }) {
             </select>
           </div>
 
-          {/* Inline: Accident Zone + Severity */}
-          <div className="form-group inline-pair">
-            <div className="inline-field form-group">
-              <label htmlFor="accidentzone">Accident Zone</label>
-              <select
-                id="accidentzone"
-                name="accidentzone"
-                required
-                value={accidentZone}
-                onChange={handleZoneChange}
-              >
-                <option value="" disabled hidden>Select accident zone</option>
-                <option value="none">None</option>
-                <option value="front">Front</option>
-                <option value="rear">Rear</option>
-                <option value="side">Side</option>
-              </select>
+          {/* Row 2: Rust + Accident Zone + Severity */}
+          <div className="form-group">
+            <label htmlFor="rust">Rust Level</label>
+            <div className="range-inline">
+              <input
+                type="range"
+                id="rust"
+                name="rust"
+                min="0"
+                max="5"
+                value={rust}
+                onChange={(e) => setRust(Number(e.target.value))}
+              />
+              <span className="range-value">{rust}</span>
             </div>
+          </div>
 
-            <div className={`inline-field form-group ${severityDisabled ? 'is-disabled' : ''}`}>
+          <div className="form-group">
+            <label htmlFor="accidentzone">Accident Zone</label>
+            <select
+              id="accidentzone"
+              name="accidentzone"
+              required
+              value={accidentZone}
+              onChange={handleZoneChange}
+            >
+              <option value="" disabled hidden>Select accident zone</option>
+              <option value="none">None</option>
+              <option value="front">Front</option>
+              <option value="rear">Rear</option>
+              <option value="side">Side</option>
+            </select>
+          </div>
+
+          <div className={`inline-field form-group ${severityDisabled ? 'is-disabled' : ''}`}>
             <label htmlFor="severity">Accident Severity</label>
             <div className="range-inline">
               <input
@@ -234,18 +248,16 @@ function Home({ setBackendResponse }) {
             </div>
           </div>
 
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="rust">Rust Level <span className="slider-value">{rust}</span></label>
+          {/* Row 3: Time Budget (span 2) + Flooded */}
+          <div className="form-group col-span-2">
+            <label htmlFor="timebudget">Time Budget (min)</label>
             <input
-              type="range"
-              id="rust"
-              name="rust"
-              min="0"
-              max="5"
-              value={rust}
-              onChange={(e) => setRust(Number(e.target.value))}
+              type="number"
+              id="timebudget"
+              name="timebudget"
+              placeholder="Enter the time budget"
+              required
+              min="10"
             />
           </div>
 
@@ -262,22 +274,10 @@ function Home({ setBackendResponse }) {
               <span className="slider" />
             </label>
             <span className={`switch-state ${flooded ? 'on' : 'off'}`}>
-              {flooded ? 'Yes' : 'No'}
             </span>
           </div>
-
-          <div className="form-group">
-            <label htmlFor="timebudget">Time Budget (min)</label>
-            <input
-              type="number"
-              id="timebudget"
-              name="timebudget"
-              placeholder="Enter the time budget"
-              required
-              min="10"
-            />
-          </div>
         </div>
+
 
         <button type="submit" className="btn-submit">Submit</button>
       </form>
